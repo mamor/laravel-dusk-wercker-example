@@ -1,0 +1,22 @@
+build:
+  services:
+    - id: mariadb
+      env:
+        MYSQL_ALLOW_EMPTY_PASSWORD: 1
+        MYSQL_DATABASE: testing
+
+  box:
+    id: madworks/php-testing
+  steps:
+    - script:
+      name: tests
+      code: |
+        cp .env.wercker .env
+        composer config --global cache-dir ${WERCKER_CACHE_DIR}/composer
+        composer install --no-interaction --no-progress --no-suggest --optimize-autoloader
+        php artisan key:generate
+        php artisan serve >& /dev/null &
+        chmod +x ./vendor/laravel/dusk/bin/chromedriver-linux
+        until mysql -h mariadb -e "show databases" 1>/dev/null 2>/dev/null; do echo "waiting for mariadb."; sleep 1; done
+        php artisan migrate:fresh
+        php artisan dusk

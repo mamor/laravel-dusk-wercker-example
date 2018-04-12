@@ -14,3 +14,7 @@
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('{userId}', function ($userId) {
+    return \App\User::findOrFail($userId)->name;
+});
